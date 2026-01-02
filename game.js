@@ -658,7 +658,6 @@ function draw() {
     }
 }
 
-// ===== ОТРИСОВКА БОЛЬШОЙ РАКЕТЫ С ОГНЁМ =====
 // ===== ОТРИСОВКА РАКЕТЫ С ОГНЁМ СЗАДИ =====
 function drawBigRocket(x, y, radius, rotation, enginePower) {
     ctx.save();
@@ -777,21 +776,20 @@ function drawBigRocket(x, y, radius, rotation, enginePower) {
     ctx.ellipse(0, scaledRadius * 1.0, scaledRadius * 0.4, scaledRadius * 0.25, 0, 0, Math.PI * 2);
     ctx.fill();
     
-    // ОГОНЬ ИЗ ДВИГАТЕЛЯ - СТРОГО СЗАДИ
+    // ОГОНЬ ИЗ ДВИГАТЕЛЯ - СТРОГО СЗАДИ (ВАЖНОЕ ИСПРАВЛЕНИЕ)
     if (enginePower > 0.1) {
-        // Сохраняем трансформацию для огня
+        const flameLength = scaledRadius * 2.0 * enginePower;
+        const flameWidth = scaledRadius * 0.8;
+        
+        // Сохраняем текущее состояние контекста
         ctx.save();
         
-        // Огонь рисуем относительно задней части
+        // Перемещаемся к задней части ракеты
         ctx.translate(0, scaledRadius * 1.0);
-        ctx.rotate(Math.PI); // Направляем назад
-        
-        const flameLength = scaledRadius * 2.0 * enginePower;
-        const flameWidth = scaledRadius * 0.7;
         
         // Градиент огня
         const flameGradient = ctx.createLinearGradient(
-            0, -flameWidth/2,
+            -flameLength, -flameWidth/2,
             0, flameWidth/2
         );
         flameGradient.addColorStop(0, '#FFFF00');
@@ -799,38 +797,26 @@ function drawBigRocket(x, y, radius, rotation, enginePower) {
         flameGradient.addColorStop(0.7, '#FF5500');
         flameGradient.addColorStop(1, '#FF0000');
         
+        // Основное пламя
         ctx.fillStyle = flameGradient;
-        ctx.globalAlpha = 0.9;
+        ctx.globalAlpha = 0.8 + Math.sin(frames * 0.1) * 0.1;
         ctx.beginPath();
         ctx.moveTo(0, -flameWidth/2);
-        ctx.lineTo(-flameLength, 0);
-        ctx.lineTo(0, flameWidth/2);
+        ctx.quadraticCurveTo(-flameLength * 0.5, -flameWidth/3, -flameLength, 0);
+        ctx.quadraticCurveTo(-flameLength * 0.5, flameWidth/3, 0, flameWidth/2);
         ctx.closePath();
         ctx.fill();
         
         // Внешнее свечение
-        ctx.fillStyle = 'rgba(255, 150, 0, 0.4)';
+        ctx.fillStyle = 'rgba(255, 100, 0, 0.3)';
         ctx.beginPath();
-        ctx.moveTo(0, -flameWidth/1.3);
-        ctx.lineTo(-flameLength * 1.3, 0);
-        ctx.lineTo(0, flameWidth/1.3);
+        ctx.moveTo(0, -flameWidth);
+        ctx.quadraticCurveTo(-flameLength * 0.7, -flameWidth/2, -flameLength * 1.2, 0);
+        ctx.quadraticCurveTo(-flameLength * 0.7, flameWidth/2, 0, flameWidth);
         ctx.closePath();
         ctx.fill();
         
         ctx.restore();
-        
-        // Искры
-        ctx.fillStyle = '#FFFF00';
-        ctx.globalAlpha = 0.7;
-        for (let i = 0; i < 3; i++) {
-            const sparkX = Math.cos(Math.PI + (Math.random() - 0.5) * 0.2) * flameLength * (0.3 + Math.random() * 0.7);
-            const sparkY = scaledRadius * 1.0 + Math.sin(Math.PI + (Math.random() - 0.5) * 0.2) * flameLength * (0.3 + Math.random() * 0.7);
-            const sparkSize = Math.random() * 1.5 + 1;
-            
-            ctx.beginPath();
-            ctx.arc(sparkX, sparkY, sparkSize, 0, Math.PI * 2);
-            ctx.fill();
-        }
         ctx.globalAlpha = 1;
     }
     
@@ -980,6 +966,7 @@ if (isMobileDevice()) {
     // Увеличиваем интервал между астероидами на мобильных
     spawnRate = 80; // БОЛЬШЕ ЧИСЛО = РЕЖЕ АСТЕРОИДЫ
 }
+
 
 
 
