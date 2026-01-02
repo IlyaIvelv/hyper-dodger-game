@@ -1,4 +1,4 @@
-// game.js - ГИПЕР-УВОРАЧИВАТЕЛЬ (исправленная версия)
+// game.js - ГИПЕР-УВОРАЧИВАТЕЛЬ (полная версия с исправлениями)
 
 // ===== ЭЛЕМЕНТЫ DOM =====
 const canvas = document.getElementById('gameCanvas');
@@ -20,7 +20,7 @@ document.body.appendChild(shieldTimer);
 // ===== ИГРОВЫЕ ПЕРЕМЕННЫЕ =====
 let player = { 
     x: 0, y: 0, 
-    radius: 20,
+    radius: 35, // УВЕЛИЧЕН РАЗМЕР
     color: '#4cc9f0', 
     isExploding: false, 
     explosionProgress: 0,
@@ -31,8 +31,9 @@ let player = {
     enginePower: 0,
     hasShield: false,
     shieldTime: 0,
-    shieldDuration: 10, // 10 секунд щита
-    shieldRadius: 0
+    shieldDuration: 10,
+    shieldRadius: 0,
+    engineFlame: [] // Массив для частиц огня
 };
 
 let asteroids = [];
@@ -50,15 +51,15 @@ let explosionParticles = [];
 
 // ===== УСТАНОВКА РАЗМЕРА КАНВАСА =====
 function resizeCanvas() {
-    canvas.width = canvas.clientWidth;
-    canvas.height = canvas.clientHeight;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 }
 window.addEventListener('resize', resizeCanvas);
 
 // ===== ИНИЦИАЛИЗАЦИЯ ИГРОКА =====
 function initPlayer() {
     player.x = canvas.width / 2;
-    player.y = canvas.height - 100;
+    player.y = canvas.height - 150;
     player.isExploding = false;
     player.explosionProgress = 0;
     player.velocityX = 0;
@@ -69,10 +70,56 @@ function initPlayer() {
     player.hasShield = false;
     player.shieldTime = 0;
     player.shieldRadius = 0;
+    player.engineFlame = []; // Очищаем огонь
     explosionParticles = [];
     shields = [];
     asteroids = [];
     debris = [];
+}
+
+// ===== СОЗДАНИЕ ЧАСТИЦ ОГНЯ ДЛЯ ДВИГАТЕЛЯ =====
+function createEngineFlame() {
+    if (player.enginePower > 0.1 && gameRunning && !player.isExploding) {
+        // Создаем частицы огня
+        for (let i = 0; i < 3; i++) {
+            const angle = player.rotation - Math.PI; // Направление назад от корабля
+            const speedVariation = (Math.random() - 0.5) * 0.5;
+            const angleVariation = (Math.random() - 0.5) * 0.3;
+            
+            player.engineFlame.push({
+                x: player.x - Math.cos(player.rotation) * player.radius * 1.2,
+                y: player.y - Math.sin(player.rotation) * player.radius * 1.2,
+                speedX: Math.cos(angle + angleVariation) * (3 + player.enginePower * 2 + speedVariation),
+                speedY: Math.sin(angle + angleVariation) * (3 + player.enginePower * 2 + speedVariation),
+                size: Math.random() * 6 + 4,
+                life: 1.0,
+                decay: 0.05 + Math.random() * 0.03,
+                color: ['#FF5500', '#FFAA00', '#FFFF00'][Math.floor(Math.random() * 3)]
+            });
+        }
+    }
+}
+
+// ===== ОБНОВЛЕНИЕ ЧАСТИЦ ОГНЯ =====
+function updateEngineFlame() {
+    for (let i = player.engineFlame.length - 1; i >= 0; i--) {
+        const p = player.engineFlame[i];
+        p.x += p.speedX;
+        p.y += p.speedY;
+        p.life -= p.decay;
+        p.speedX *= 0.95;
+        p.speedY *= 0.95;
+        p.size *= 0.97;
+        
+        if (p.life <= 0) {
+            player.engineFlame.splice(i, 1);
+        }
+    }
+    
+    // Ограничиваем количество частиц
+    if (player.engineFlame.length > 100) {
+        player.engineFlame.splice(0, player.engineFlame.length - 100);
+    }
 }
 
 // ===== СОЗДАНИЕ ОСКОЛКОВ АСТЕРОИДА =====
@@ -121,7 +168,7 @@ function updateDebris() {
 function createShieldBonus() {
     if (player.hasShield || shields.length > 0) return;
     
-    const radius = 15;
+    const radius = 20;
     let x = Math.random() * (canvas.width - radius * 2) + radius;
     let y = Math.random() * (canvas.height - radius * 2) + radius;
     
@@ -138,8 +185,7 @@ function createShieldBonus() {
     });
 }
 
-// ===== СОЗДАНИЕ АСТЕРОИДА С ВРАЩЕНИЕМ =====
-// ===== СОЗДАНИЕ АСТЕРОИДА С ВРАЩЕНИЕМ (МЕДЛЕННЕЕ) =====
+// ===== СОЗДАНИЕ АСТЕРОИДА С ВРАЩЕНИЕМ (МЕДЛЕННО) =====
 function createAsteroid() {
     const radius = Math.random() * 25 + 20;
     let x, y;
@@ -158,11 +204,9 @@ function createAsteroid() {
     const dy = targetY - y;
     const distance = Math.sqrt(dx * dx + dy * dy);
     
-    // ЗАМЕДЛЕННАЯ СКОРОСТЬ АСТЕРОИДОВ:
-    // Было: Math.random() * 1.5 + 0.8 + score / 2500
-    // Стало: медленнее в начале, медленнее растет со счетом
-    const baseSpeed = Math.random() * 1.0 + 0.5; // Медленнее базовая скорость
-    const scoreBonus = score / 5000; // Медленнее рост со счетом
+    // МЕДЛЕННАЯ СКОРОСТЬ АСТЕРОИДОВ
+    const baseSpeed = Math.random() * 0.8 + 0.4; // Медленная базовая скорость
+    const scoreBonus = score / 8000; // Очень медленный рост со счетом
     const speed = baseSpeed + scoreBonus;
     
     const rotationSpeed = (Math.random() - 0.5) * 0.04;
@@ -235,6 +279,10 @@ function update() {
         return;
     }
     
+    // Создаем и обновляем огонь
+    createEngineFlame();
+    updateEngineFlame();
+    
     // Движение игрока к цели
     const speed = 8;
     if (targetX !== null && targetY !== null) {
@@ -272,7 +320,7 @@ function update() {
     // Обновление щита игрока
     if (player.hasShield) {
         player.shieldTime += 1/60;
-        player.shieldRadius = player.radius + 15 + Math.sin(frames * 0.1) * 5;
+        player.shieldRadius = player.radius + 20 + Math.sin(frames * 0.1) * 5;
         
         // Показываем таймер щита
         const remainingTime = Math.max(0, player.shieldDuration - player.shieldTime);
@@ -296,9 +344,9 @@ function update() {
     // Обновление осколков
     updateDebris();
     
-    // Создание астероидов
+    // Создание астероидов (реже)
     frames++;
-    const currentSpawnRate = Math.max(45, spawnRate - Math.floor(score / 180));
+    const currentSpawnRate = Math.max(35, spawnRate - Math.floor(score / 150));
     if (frames % currentSpawnRate === 0) {
         createAsteroid();
         
@@ -441,7 +489,7 @@ function draw() {
     
     // Звёзды
     ctx.fillStyle = '#fff';
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 150; i++) {
         const x = (i * 37) % canvas.width;
         const y = (i * 41) % canvas.height;
         const size = Math.sin(frames * 0.01 + i) * 0.5 + 0.5;
@@ -450,6 +498,16 @@ function draw() {
         ctx.arc(x, y, size, 0, Math.PI * 2);
         ctx.fill();
     }
+    
+    // Огонь из двигателя (частицы)
+    player.engineFlame.forEach(p => {
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    ctx.globalAlpha = 1;
     
     // Осколки астероидов
     debris.forEach(d => {
@@ -539,14 +597,14 @@ function draw() {
         
         // Контур
         ctx.strokeStyle = '#00FFFF';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.arc(0, 0, s.radius * pulseFactor, 0, Math.PI * 2);
         ctx.stroke();
         
         // Символ щита
         ctx.fillStyle = '#FFFFFF';
-        ctx.font = `bold ${s.radius * 1.2}px Arial`;
+        ctx.font = `bold ${s.radius * 1.5}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('🛡️', 0, 0);
@@ -562,14 +620,14 @@ function draw() {
         
         // Внешнее свечение
         ctx.strokeStyle = '#00FFFF';
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 4;
         ctx.beginPath();
         ctx.arc(player.x, player.y, shieldRadius * pulse, 0, Math.PI * 2);
         ctx.stroke();
         
         // Внутренний контур
         ctx.strokeStyle = 'rgba(0, 200, 255, 0.5)';
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 2;
         ctx.setLineDash([5, 5]);
         ctx.beginPath();
         ctx.arc(player.x, player.y, shieldRadius * 0.8 * pulse, 0, Math.PI * 2);
@@ -595,139 +653,213 @@ function draw() {
         ctx.arc(player.x, player.y, player.radius * (1 + player.explosionProgress * 3), 0, Math.PI * 2);
         ctx.fill();
     } else {
-        // Отрисовка корабля (СТАРЫЙ ВИД)
-        drawOriginalShip(player.x, player.y, player.radius, player.rotation, player.enginePower);
+        // Отрисовка БОЛЬШОЙ РАКЕТЫ С ОГНЁМ
+        drawBigRocket(player.x, player.y, player.radius, player.rotation, player.enginePower);
     }
 }
 
-// ===== ОТРИСОВКА СТАРОГО КОРАБЛЯ (С МАЛЕНЬКИМ ОГНЬКОМ) =====
-function drawOriginalShip(x, y, radius, rotation, enginePower) {
+// ===== ОТРИСОВКА БОЛЬШОЙ РАКЕТЫ С ОГНЁМ =====
+function drawBigRocket(x, y, radius, rotation, enginePower) {
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(rotation);
     
-    const scale = 0.6;
+    const scale = 0.8;
     const scaledRadius = radius * scale;
     
-    // Корпус корабля (эллиптический)
+    // Корпус ракеты
     const bodyGradient = ctx.createLinearGradient(
-        -scaledRadius * 0.8, 0,
-        scaledRadius * 0.8, 0
+        -scaledRadius * 0.9, 0,
+        scaledRadius * 0.9, 0
     );
-    bodyGradient.addColorStop(0, '#2a6b9c');
-    bodyGradient.addColorStop(0.5, '#4cc9f0');
-    bodyGradient.addColorStop(1, '#2a6b9c');
+    bodyGradient.addColorStop(0, '#1a5b8c');
+    bodyGradient.addColorStop(0.3, '#4cc9f0');
+    bodyGradient.addColorStop(0.7, '#4cc9f0');
+    bodyGradient.addColorStop(1, '#1a5b8c');
     
     ctx.fillStyle = bodyGradient;
     ctx.beginPath();
-    ctx.ellipse(0, 0, scaledRadius * 0.8, scaledRadius * 1.2, 0, 0, Math.PI * 2);
+    
+    // Форма ракеты
+    ctx.moveTo(0, -scaledRadius * 1.5);
+    ctx.bezierCurveTo(
+        scaledRadius * 0.7, -scaledRadius * 1.2,
+        scaledRadius * 1.1, -scaledRadius * 0.3,
+        scaledRadius * 0.8, scaledRadius * 1.2
+    );
+    ctx.lineTo(-scaledRadius * 0.8, scaledRadius * 1.2);
+    ctx.bezierCurveTo(
+        -scaledRadius * 1.1, -scaledRadius * 0.3,
+        -scaledRadius * 0.7, -scaledRadius * 1.2,
+        0, -scaledRadius * 1.5
+    );
+    
+    ctx.closePath();
     ctx.fill();
     
+    // Обводка корпуса
     ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 2;
     ctx.stroke();
-    
-    // Боковые панели
-    ctx.fillStyle = 'rgba(42, 107, 156, 0.7)';
-    ctx.beginPath();
-    ctx.ellipse(-scaledRadius * 0.6, 0, scaledRadius * 0.3, scaledRadius * 0.9, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    ctx.beginPath();
-    ctx.ellipse(scaledRadius * 0.6, 0, scaledRadius * 0.3, scaledRadius * 0.9, 0, 0, Math.PI * 2);
-    ctx.fill();
     
     // Кабина
     const cockpitGradient = ctx.createRadialGradient(
-        0, -scaledRadius * 0.3, 0,
-        0, -scaledRadius * 0.3, scaledRadius * 0.6
+        0, -scaledRadius * 0.8, 0,
+        0, -scaledRadius * 0.8, scaledRadius * 0.8
     );
-    cockpitGradient.addColorStop(0, '#a8dadc');
-    cockpitGradient.addColorStop(1, '#457b9d');
+    cockpitGradient.addColorStop(0, '#c8eafc');
+    cockpitGradient.addColorStop(0.5, '#7bc8f0');
+    cockpitGradient.addColorStop(1, '#2a6b9c');
     
     ctx.fillStyle = cockpitGradient;
     ctx.beginPath();
-    ctx.arc(0, -scaledRadius * 0.3, scaledRadius * 0.6, 0, Math.PI * 2);
+    ctx.arc(0, -scaledRadius * 0.8, scaledRadius * 0.7, 0, Math.PI * 2);
     ctx.fill();
     
     // Стекло кабины
     const glassGradient = ctx.createRadialGradient(
-        0, -scaledRadius * 0.3, 0,
-        0, -scaledRadius * 0.3, scaledRadius * 0.45
+        -scaledRadius * 0.2, -scaledRadius * 0.9, 0,
+        0, -scaledRadius * 0.8, scaledRadius * 0.6
     );
-    glassGradient.addColorStop(0, 'rgba(168, 218, 220, 0.9)');
-    glassGradient.addColorStop(1, 'rgba(69, 123, 157, 0.4)');
+    glassGradient.addColorStop(0, 'rgba(200, 234, 252, 0.9)');
+    glassGradient.addColorStop(0.7, 'rgba(123, 200, 240, 0.6)');
+    glassGradient.addColorStop(1, 'rgba(42, 107, 156, 0.3)');
     
     ctx.fillStyle = glassGradient;
     ctx.beginPath();
-    ctx.arc(0, -scaledRadius * 0.3, scaledRadius * 0.45, 0, Math.PI * 2);
+    ctx.arc(0, -scaledRadius * 0.8, scaledRadius * 0.5, 0, Math.PI * 2);
     ctx.fill();
     
-    // Окна кабины
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    // Пилот
+    ctx.fillStyle = 'rgba(30, 30, 50, 0.8)';
     ctx.beginPath();
-    ctx.ellipse(-scaledRadius * 0.1, -scaledRadius * 0.4, scaledRadius * 0.1, scaledRadius * 0.15, 0, 0, Math.PI * 2);
+    ctx.arc(0, -scaledRadius * 0.8, scaledRadius * 0.2, 0, Math.PI * 2);
     ctx.fill();
     
     // Крылья
+    ctx.fillStyle = '#2a6b9c';
+    
+    // Левое крыло
+    ctx.beginPath();
+    ctx.moveTo(-scaledRadius * 0.6, -scaledRadius * 0.2);
+    ctx.lineTo(-scaledRadius * 1.5, scaledRadius * 0.3);
+    ctx.lineTo(-scaledRadius * 0.8, scaledRadius * 0.8);
+    ctx.lineTo(-scaledRadius * 0.4, scaledRadius * 0.5);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Правое крыло
+    ctx.beginPath();
+    ctx.moveTo(scaledRadius * 0.6, -scaledRadius * 0.2);
+    ctx.lineTo(scaledRadius * 1.5, scaledRadius * 0.3);
+    ctx.lineTo(scaledRadius * 0.8, scaledRadius * 0.8);
+    ctx.lineTo(scaledRadius * 0.4, scaledRadius * 0.5);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Обводка крыльев
+    ctx.strokeStyle = '#4cc9f0';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    
+    // Стабилизаторы
     ctx.fillStyle = '#3a86ff';
+    
+    // Левый стабилизатор
     ctx.beginPath();
-    ctx.moveTo(-scaledRadius * 0.8, scaledRadius * 0.2);
-    ctx.lineTo(-scaledRadius * 1.3, scaledRadius * 0.7);
-    ctx.lineTo(-scaledRadius * 0.8, scaledRadius * 0.7);
+    ctx.moveTo(-scaledRadius * 0.3, scaledRadius * 1.0);
+    ctx.lineTo(-scaledRadius * 0.7, scaledRadius * 1.4);
+    ctx.lineTo(-scaledRadius * 0.1, scaledRadius * 1.4);
     ctx.closePath();
     ctx.fill();
     
+    // Правый стабилизатор
     ctx.beginPath();
-    ctx.moveTo(scaledRadius * 0.8, scaledRadius * 0.2);
-    ctx.lineTo(scaledRadius * 1.3, scaledRadius * 0.7);
-    ctx.lineTo(scaledRadius * 0.8, scaledRadius * 0.7);
+    ctx.moveTo(scaledRadius * 0.3, scaledRadius * 1.0);
+    ctx.lineTo(scaledRadius * 0.7, scaledRadius * 1.4);
+    ctx.lineTo(scaledRadius * 0.1, scaledRadius * 1.4);
     ctx.closePath();
     ctx.fill();
     
-    // МАЛЕНЬКИЙ ОГОНЁК ДВИГАТЕЛЯ (как раньше)
+    // Двигатель (сопло)
+    ctx.fillStyle = '#333333';
+    ctx.beginPath();
+    ctx.ellipse(0, scaledRadius * 1.2, scaledRadius * 0.5, scaledRadius * 0.3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Внутренность сопла
+    ctx.fillStyle = '#222222';
+    ctx.beginPath();
+    ctx.ellipse(0, scaledRadius * 1.2, scaledRadius * 0.4, scaledRadius * 0.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // ЯРКИЙ ОГОНЬ ИЗ ДВИГАТЕЛЯ ПРИ ДВИЖЕНИИ
     if (enginePower > 0.1) {
-        // Маленький размер огонька
-        const engineLength = scaledRadius * 0.8 * enginePower; // Уменьшили в 2 раза
-        const engineWidth = scaledRadius * 0.4; // Уменьшили ширину
+        const flameLength = scaledRadius * 2.5 * enginePower;
+        const flameWidth = scaledRadius * 0.9;
         
-        // Градиент огня (менее яркий)
-        const engineGradient = ctx.createLinearGradient(
-            0, -engineWidth/2,
-            0, engineWidth/2
+        // Основное пламя
+        const flameGradient = ctx.createLinearGradient(
+            0, -flameWidth/2,
+            0, flameWidth/2
         );
-        engineGradient.addColorStop(0, 'rgba(255, 100, 0, 0.8)'); // Более прозрачный
-        engineGradient.addColorStop(0.5, 'rgba(255, 200, 0, 0.6)'); // Желтый вместо ярко-желтого
-        engineGradient.addColorStop(1, 'rgba(255, 100, 0, 0.8)');
+        flameGradient.addColorStop(0, '#FFFF00');
+        flameGradient.addColorStop(0.3, '#FFAA00');
+        flameGradient.addColorStop(0.7, '#FF5500');
+        flameGradient.addColorStop(1, '#FF0000');
         
-        ctx.fillStyle = engineGradient;
-        ctx.globalAlpha = 0.6 * enginePower; // Меньшая прозрачность
+        ctx.fillStyle = flameGradient;
+        ctx.globalAlpha = 0.9;
         ctx.beginPath();
-        ctx.moveTo(0, -engineWidth/2);
-        ctx.lineTo(-engineLength, 0);
-        ctx.lineTo(0, engineWidth/2);
+        ctx.moveTo(0, -flameWidth/2);
+        ctx.lineTo(-flameLength, 0);
+        ctx.lineTo(0, flameWidth/2);
         ctx.closePath();
         ctx.fill();
         
-        ctx.globalAlpha = 1;
+        // Внешнее свечение пламени
+        ctx.fillStyle = 'rgba(255, 100, 0, 0.4)';
+        ctx.beginPath();
+        ctx.moveTo(0, -flameWidth/1.5);
+        ctx.lineTo(-flameLength * 1.2, 0);
+        ctx.lineTo(0, flameWidth/1.5);
+        ctx.closePath();
+        ctx.fill();
         
-        // Добавляем маленькие искры
-        if (Math.random() < 0.3) {
-            ctx.fillStyle = '#ffff00';
-            ctx.globalAlpha = 0.5;
+        // Искры
+        ctx.fillStyle = '#FFFF00';
+        ctx.globalAlpha = 0.7;
+        for (let i = 0; i < 5; i++) {
+            const sparkX = -flameLength * (0.5 + Math.random() * 0.5);
+            const sparkY = (Math.random() - 0.5) * flameWidth * 0.8;
+            const sparkSize = Math.random() * 3 + 2;
+            
             ctx.beginPath();
-            const sparkX = -engineLength * 0.8;
-            const sparkY = (Math.random() - 0.5) * engineWidth * 0.5;
-            const sparkSize = Math.random() * 2 + 1;
             ctx.arc(sparkX, sparkY, sparkSize, 0, Math.PI * 2);
             ctx.fill();
-            ctx.globalAlpha = 1;
         }
+        
+        ctx.globalAlpha = 1;
     }
+    
+    // Детали на корпусе
+    ctx.fillStyle = '#3a86ff';
+    ctx.beginPath();
+    ctx.rect(-scaledRadius * 0.2, -scaledRadius * 0.4, scaledRadius * 0.4, scaledRadius * 0.2);
+    ctx.fill();
+    
+    ctx.fillStyle = '#FF5555';
+    ctx.beginPath();
+    ctx.arc(scaledRadius * 0.5, -scaledRadius * 0.2, scaledRadius * 0.1, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = '#55FF55';
+    ctx.beginPath();
+    ctx.arc(-scaledRadius * 0.5, -scaledRadius * 0.2, scaledRadius * 0.1, 0, Math.PI * 2);
+    ctx.fill();
     
     ctx.restore();
 }
-
 
 // ===== ИГРОВОЙ ЦИКЛ =====
 function gameLoop() {
@@ -763,30 +895,6 @@ function gameOver() {
     
     // Показываем кнопку "Играть снова" сразу
     gameOverScreen.style.display = 'flex';
-}
-
-function isMobileDevice() {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-}
-
-// Дополнительное замедление для мобильных
-if (isMobileDevice()) {
-    console.log("Мобильное устройство - дополнительное замедление астероидов");
-    
-    // Переопределяем скорость для мобильных
-    const originalCreateAsteroid = createAsteroid;
-    createAsteroid = function() {
-        const asteroid = originalCreateAsteroid();
-        const lastIndex = asteroids.length - 1;
-        
-        if (lastIndex >= 0) {
-            // Дополнительно замедляем астероиды на мобильных
-            asteroids[lastIndex].speedX *= 0.8;
-            asteroids[lastIndex].speedY *= 0.8;
-        }
-        
-        return asteroid;
-    };
 }
 
 // ===== НАЧАЛО ИГРЫ =====
@@ -836,5 +944,27 @@ window.addEventListener('load', function() {
     console.log("🚀 Игра 'Гипер-уворачиватель' готова к запуску!");
 });
 
+// ===== ДОПОЛНИТЕЛЬНОЕ ЗАМЕДЛЕНИЕ ДЛЯ МОБИЛЬНЫХ =====
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
 
-
+// Дополнительное замедление для мобильных
+if (isMobileDevice()) {
+    console.log("Мобильное устройство - дополнительное замедление астероидов");
+    
+    // Переопределяем скорость для мобильных
+    const originalCreateAsteroid = createAsteroid;
+    createAsteroid = function() {
+        const asteroid = originalCreateAsteroid();
+        const lastIndex = asteroids.length - 1;
+        
+        if (lastIndex >= 0) {
+            // Дополнительно замедляем астероиды на мобильных
+            asteroids[lastIndex].speedX *= 0.7;
+            asteroids[lastIndex].speedY *= 0.7;
+        }
+        
+        return asteroid;
+    };
+}
