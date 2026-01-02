@@ -1,55 +1,50 @@
-// ПРОСТОЙ ТЕСТ - УБЕДИМСЯ ЧТО КОД ВЫПОЛНЯЕТСЯ
-console.log("=== GAME.JS ЗАГРУЖЕН ===");
+// game.js - ГИПЕР-УВОРАЧИВАТЕЛЬ
+console.log("=== ИГРА ЗАГРУЖАЕТСЯ ===");
 
-// Ждем полной загрузки DOM
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("DOM полностью загружен!");
+// Ждем полной загрузки страницы
+window.addEventListener('load', function() {
+    console.log("Страница загружена!");
     
-    // Проверяем элементы
+    // Получаем элементы ДО того как они используются
     const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas ? canvas.getContext('2d') : null;
+    const scoreElement = document.getElementById('score');
+    const highScoreElement = document.getElementById('highScore');
+    const startScreen = document.getElementById('startScreen');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const finalScoreElement = document.getElementById('finalScore');
     const startButton = document.getElementById('startButton');
     const restartButton = document.getElementById('restartButton');
     
-    console.log("Canvas:", canvas ? "Найден" : "Не найден");
-    console.log("Start button:", startButton ? "Найден" : "Не найден");
-    console.log("Restart button:", restartButton ? "Найден" : "Не найден");
+    // Проверяем все элементы
+    console.log("Canvas:", canvas ? "OK" : "ERROR");
+    console.log("Start button:", startButton ? "OK" : "ERROR");
+    console.log("Restart button:", restartButton ? "OK" : "ERROR");
     
-    // Если canvas не найден, создаем его
-    if (!canvas) {
-        console.error("Canvas не найден! Создаем...");
-        const newCanvas = document.createElement('canvas');
-        newCanvas.id = 'gameCanvas';
-        newCanvas.width = 800;
-        newCanvas.height = 600;
-        newCanvas.style.border = '2px solid red';
-        document.body.appendChild(newCanvas);
+    // Если canvas не найден - игра не может работать
+    if (!canvas || !ctx) {
+        console.error("ОШИБКА: Canvas не найден!");
+        alert("Ошибка загрузки игры. Canvas не найден.");
+        return;
     }
     
-    // Принудительно показываем, что скрипт работает
-    setTimeout(() => {
-        if (startButton) {
-            startButton.style.backgroundColor = '#4CAF50';
-            startButton.textContent = "✅ ГОТОВО! НАЖМИ МЕНЯ";
-        }
-    }, 1000);
+    // Обработчики кнопок
+    if (startButton) {
+        startButton.addEventListener('click', startGame);
+        startButton.textContent = "🚀 СТАРТ ИГРЫ (РАБОТАЕТ)";
+        startButton.style.background = "#4CAF50";
+    }
+    
+    if (restartButton) {
+        restartButton.addEventListener('click', startGame);
+    }
+    
+    // Инициализация
+    resizeCanvas();
+    highScoreElement.textContent = `Рекорд: ${localStorage.getItem('hyperDodgerHighScore') || 0}`;
+    
+    console.log("Игра инициализирована успешно!");
 });
-
-// game.js - ПОЛНЫЙ КОД ИГРЫ
-// Инициализация элементов
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const scoreElement = document.getElementById('score');
-const highScoreElement = document.getElementById('highScore');
-const startScreen = document.getElementById('startScreen');
-const gameOverScreen = document.getElementById('gameOverScreen');
-const finalScoreElement = document.getElementById('finalScore');
-
-// Устанавливаем размер канваса
-function resizeCanvas() {
-    canvas.width = canvas.clientWidth;
-    canvas.height = canvas.clientHeight;
-}
-window.addEventListener('resize', resizeCanvas);
 
 // Игровые переменные
 let player = { 
@@ -622,4 +617,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Глобальная функция для кнопок
 window.startGame = startGame;
+
 
