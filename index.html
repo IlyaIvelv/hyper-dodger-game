@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Гипер-уворачиватель</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="scorePanel">
+        <div id="score">Очки: 0</div>
+        <div id="highScore">Рекорд: 0</div>
+    </div>
+    
+    <div id="startScreen" class="screen">
+        <h1>🚀 ГИПЕР-УВОРАЧИВАТЕЛЬ</h1>
+        <p>Уворачивайтесь от астероидов!<br>Собирайте щиты для защиты.</p>
+        <button id="startButton">СТАРТ ИГРЫ</button>
+    </div>
+    
+    <div id="gameOverScreen" class="screen">
+        <h2>ИГРА ОКОНЧЕНА</h2>
+        <p>Ваш результат:</p>
+        <div id="finalScore">0</div>
+        <button id="restartButton">ИГРАТЬ СНОВА</button>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
