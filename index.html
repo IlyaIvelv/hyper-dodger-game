@@ -5,120 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Гипер-уворачиватель</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-touch-callout: none;
-            user-select: none;
-        }
-        
-        body {
-            background: #000;
-            color: white;
-            font-family: Arial;
-            overflow: hidden;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        #gameContainer {
-            position: relative;
-            width: 100%;
-            max-width: 800px;
-            height: 80vh;
-        }
-        
-        #scorePanel {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            max-width: 800px;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
-        
-        #score, #highScore {
-            font-size: 18px;
-            color: #0ff;
-        }
-        
-        #gameCanvas {
-            width: 100%;
-            height: 100%;
-            background: #000;
-            border: 2px solid #0ff;
-            display: block;
-        }
-        
-        .screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-        }
-        
-        #startScreen {
-            background: #001020;
-        }
-        
-        #gameOverScreen {
-            display: none;
-        }
-        
-        h1 {
-            color: #0ff;
-            margin: 20px;
-            text-align: center;
-        }
-        
-        button {
-            background: #0ff;
-            color: #000;
-            border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            font-weight: bold;
-            margin: 20px;
-            cursor: pointer;
-        }
-        
-        button:active {
-            background: #0cc;
-        }
-        
-        #finalScore {
-            color: #ff0;
-            font-size: 40px;
-            margin: 20px;
-        }
+        * { margin:0; padding:0; box-sizing:border-box; user-select:none; }
+        body { background:#000; color:#fff; font-family:Arial; overflow:hidden; }
+        #gameArea { position:relative; width:100vw; height:100vh; }
+        #gameCanvas { width:100%; height:100%; display:block; background:#000; }
+        .screen { position:absolute; top:0; left:0; width:100%; height:100%; 
+                 background:rgba(0,0,0,0.9); display:flex; flex-direction:column;
+                 align-items:center; justify-content:center; z-index:100; }
+        #startScreen { background:#001030; }
+        #gameOverScreen { display:none; }
+        h1 { color:#4cc9f0; margin:20px; font-size:36px; text-align:center; }
+        button { background:#4cc9f0; color:#000; border:none; padding:20px 40px;
+                font-size:24px; margin:20px; cursor:pointer; font-weight:bold; }
+        #scorePanel { position:absolute; top:20px; left:20px; color:#0ff; font-size:20px; z-index:50; }
+        #finalScore { color:#ff0; font-size:48px; margin:20px; }
     </style>
 </head>
 <body>
-    <div id="scorePanel">
-        <div id="score">Очки: 0</div>
-        <div id="highScore">Рекорд: 0</div>
-    </div>
-    
-    <div id="gameContainer">
+    <div id="gameArea">
+        <div id="scorePanel">
+            <div>Очки: <span id="score">0</span></div>
+            <div>Рекорд: <span id="highScore">0</span></div>
+        </div>
         <canvas id="gameCanvas"></canvas>
-        
         <div id="startScreen" class="screen">
-            <h1>ГИПЕР-УВОРАЧИВАТЕЛЬ</h1>
+            <h1>🚀 ГИПЕР-УВОРАЧИВАТЕЛЬ</h1>
             <button id="startButton">СТАРТ ИГРЫ</button>
         </div>
-        
         <div id="gameOverScreen" class="screen">
             <h1>ИГРА ОКОНЧЕНА</h1>
             <div id="finalScore">0</div>
@@ -127,61 +40,337 @@
     </div>
 
     <script>
-        // ПРОСТОЙ СКРИПТ ДЛЯ ПРОВЕРКИ
-        console.log("Страница загружена!");
+        // === ИГРА В ОДНОМ ФАЙЛЕ ===
+        console.log("🎮 Игра загружается...");
         
-        // Проверяем элементы
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log("DOM готов!");
+        let canvas, ctx;
+        let player = { x: 400, y: 500, radius: 20, hasShield: false };
+        let asteroids = [];
+        let shields = [];
+        let debris = [];
+        let score = 0;
+        let highScore = localStorage.getItem('gameHighScore') || 0;
+        let gameRunning = false;
+        let animationId;
+        let targetX = null, targetY = null;
+        let frames = 0;
+        
+        // Инициализация
+        function init() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
             
-            const canvas = document.getElementById('gameCanvas');
-            const startBtn = document.getElementById('startButton');
-            const restartBtn = document.getElementById('restartButton');
+            // Размер canvas
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
             
-            console.log("Canvas:", canvas ? "OK" : "ERROR");
-            console.log("Start button:", startBtn ? "OK" : "ERROR");
+            // Рекорд
+            document.getElementById('highScore').textContent = highScore;
             
-            // Тестовый обработчик
-            if (startBtn) {
-                startBtn.addEventListener('click', function() {
-                    console.log("Кнопка нажата!");
-                    alert("Игра запускается!");
-                    
-                    // Скрываем стартовый экран
-                    document.getElementById('startScreen').style.display = 'none';
-                    
-                    // Запускаем тестовую отрисовку
-                    const ctx = canvas.getContext('2d');
-                    ctx.fillStyle = '#0f0';
-                    ctx.font = '24px Arial';
-                    ctx.fillText('ИГРА РАБОТАЕТ!', 50, 50);
-                });
+            // Кнопки
+            document.getElementById('startButton').onclick = startGame;
+            document.getElementById('restartButton').onclick = startGame;
+            
+            // Управление
+            canvas.addEventListener('mousedown', handleInput);
+            canvas.addEventListener('touchstart', handleTouch);
+            canvas.addEventListener('mouseup', () => { targetX = targetY = null; });
+            canvas.addEventListener('touchend', () => { targetX = targetY = null; });
+            
+            console.log("✅ Игра готова!");
+        }
+        
+        // Обработка ввода
+        function handleInput(e) {
+            const rect = canvas.getBoundingClientRect();
+            targetX = e.clientX - rect.left;
+            targetY = e.clientY - rect.top;
+        }
+        
+        function handleTouch(e) {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            targetX = touch.clientX - rect.left;
+            targetY = touch.clientY - rect.top;
+        }
+        
+        // Старт игры
+        function startGame() {
+            console.log("🚀 Запуск игры!");
+            
+            // Сброс
+            player.x = canvas.width / 2;
+            player.y = canvas.height - 100;
+            player.hasShield = false;
+            asteroids = [];
+            shields = [];
+            debris = [];
+            score = 0;
+            frames = 0;
+            
+            // UI
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameOverScreen').style.display = 'none';
+            document.getElementById('score').textContent = '0';
+            
+            // Запуск
+            gameRunning = true;
+            if (animationId) cancelAnimationFrame(animationId);
+            gameLoop();
+        }
+        
+        // Создание астероида
+        function createAsteroid() {
+            asteroids.push({
+                x: Math.random() * canvas.width,
+                y: -50,
+                radius: 15 + Math.random() * 25,
+                speed: 1 + Math.random() * 2 + score / 2000,
+                color: `hsl(${Math.random() * 30 + 10}, 70%, 40%)`
+            });
+        }
+        
+        // Создание щита
+        function createShield() {
+            if (player.hasShield || shields.length > 0) return;
+            
+            shields.push({
+                x: Math.random() * (canvas.width - 100) + 50,
+                y: Math.random() * (canvas.height - 100) + 50,
+                radius: 15,
+                collected: false
+            });
+        }
+        
+        // Обновление
+        function update() {
+            if (!gameRunning) return;
+            
+            // Движение игрока
+            if (targetX !== null && targetY !== null) {
+                player.x += (targetX - player.x) * 0.1;
+                player.y += (targetY - player.y) * 0.1;
             }
             
-            if (restartBtn) {
-                restartBtn.addEventListener('click', function() {
-                    console.log("Рестарт!");
-                    location.reload();
-                });
+            // Границы
+            player.x = Math.max(20, Math.min(canvas.width - 20, player.x));
+            player.y = Math.max(20, Math.min(canvas.height - 20, player.y));
+            
+            // Астероиды
+            frames++;
+            if (frames % 60 === 0) createAsteroid();
+            
+            // Щиты (каждые 20 секунд)
+            if (frames % 1200 === 0) createShield();
+            
+            // Обновление астероидов
+            for (let i = asteroids.length - 1; i >= 0; i--) {
+                const a = asteroids[i];
+                a.y += a.speed;
+                
+                // Столкновение
+                const dx = a.x - player.x;
+                const dy = a.y - player.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (player.hasShield) {
+                    // Разрушение астероида щитом
+                    if (distance < a.radius + player.radius + 20) {
+                        // Создаем осколки
+                        for (let j = 0; j < 10; j++) {
+                            debris.push({
+                                x: a.x, y: a.y,
+                                speedX: (Math.random() - 0.5) * 5,
+                                speedY: (Math.random() - 0.5) * 5,
+                                size: Math.random() * 5 + 2,
+                                color: a.color,
+                                life: 1
+                            });
+                        }
+                        score += 25;
+                        asteroids.splice(i, 1);
+                        continue;
+                    }
+                } else {
+                    // Обычное столкновение
+                    if (distance < a.radius + player.radius) {
+                        gameOver();
+                        return;
+                    }
+                }
+                
+                // Удаление вышедших за экран
+                if (a.y > canvas.height + 100) {
+                    asteroids.splice(i, 1);
+                    score += 5;
+                }
+            }
+            
+            // Обновление осколков
+            for (let i = debris.length - 1; i >= 0; i--) {
+                const d = debris[i];
+                d.x += d.speedX;
+                d.y += d.speedY;
+                d.life -= 0.02;
+                if (d.life <= 0) debris.splice(i, 1);
+            }
+            
+            // Обновление щитов
+            for (let i = shields.length - 1; i >= 0; i--) {
+                const s = shields[i];
+                const dx = s.x - player.x;
+                const dy = s.y - player.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < s.radius + player.radius) {
+                    player.hasShield = true;
+                    shields.splice(i, 1);
+                    // Щит на 8 секунд
+                    setTimeout(() => { player.hasShield = false; }, 8000);
+                }
+            }
+            
+            // Обновление счета
+            score += 1;
+            document.getElementById('score').textContent = score;
+        }
+        
+        // Отрисовка
+        function draw() {
+            // Фон
+            ctx.fillStyle = '#000515';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Звезды
+            ctx.fillStyle = '#fff';
+            for (let i = 0; i < 100; i++) {
+                ctx.beginPath();
+                const x = (i * 37) % canvas.width;
+                const y = (i * 41) % canvas.height;
+                ctx.arc(x, y, Math.sin(frames * 0.01 + i) * 0.5 + 0.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Осколки
+            debris.forEach(d => {
+                ctx.globalAlpha = d.life;
+                ctx.fillStyle = d.color;
+                ctx.beginPath();
+                ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+            
+            // Астероиды
+            asteroids.forEach(a => {
+                ctx.fillStyle = a.color;
+                ctx.beginPath();
+                ctx.arc(a.x, a.y, a.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Тень
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.beginPath();
+                ctx.arc(a.x - 3, a.y - 3, a.radius * 0.8, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            // Щиты на карте
+            shields.forEach(s => {
+                ctx.strokeStyle = '#00ffff';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                ctx.fillStyle = '🛡️';
+                ctx.font = '20px Arial';
+                ctx.fillText('🛡️', s.x - 10, s.y + 8);
+            });
+            
+            // Щит игрока
+            if (player.hasShield) {
+                ctx.strokeStyle = '#00ffff';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(player.x, player.y, player.radius + 20, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                ctx.strokeStyle = 'rgba(0, 255, 255, 0.3)';
+                ctx.beginPath();
+                ctx.arc(player.x, player.y, player.radius + 15, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            // Корабль
+            ctx.fillStyle = player.hasShield ? '#00ffff' : '#4cc9f0';
+            ctx.beginPath();
+            ctx.moveTo(player.x, player.y - player.radius);
+            ctx.lineTo(player.x - player.radius, player.y + player.radius);
+            ctx.lineTo(player.x + player.radius, player.y + player.radius);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Кабина
+            ctx.fillStyle = '#a8dadc';
+            ctx.beginPath();
+            ctx.arc(player.x, player.y - player.radius * 0.4, player.radius * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Двигатель
+            if (targetX !== null) {
+                ctx.fillStyle = '#ff5500';
+                ctx.beginPath();
+                ctx.moveTo(player.x - player.radius * 0.6, player.y + player.radius);
+                ctx.lineTo(player.x, player.y + player.radius * 1.5);
+                ctx.lineTo(player.x + player.radius * 0.6, player.y + player.radius);
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+        
+        // Игровой цикл
+        function gameLoop() {
+            update();
+            draw();
+            if (gameRunning) {
+                animationId = requestAnimationFrame(gameLoop);
+            }
+        }
+        
+        // Конец игры
+        function gameOver() {
+            gameRunning = false;
+            cancelAnimationFrame(animationId);
+            
+            // Рекорд
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('gameHighScore', highScore);
+                document.getElementById('highScore').textContent = highScore;
+            }
+            
+            // Показываем экран
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('gameOverScreen').style.display = 'flex';
+        }
+        
+        // Ресайз
+        window.addEventListener('resize', () => {
+            if (canvas) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
             }
         });
-    </script>
-    
-    <!-- Подключаем game.js ПОСЛЕ того как DOM готов -->
-    <script>
-        // Загружаем игру после проверки
-        setTimeout(function() {
-            const script = document.createElement('script');
-            script.src = 'game.js';
-            script.onload = function() {
-                console.log("game.js загружен!");
-                // Вызываем инициализацию если она есть
-                if (typeof window.startGame === 'function') {
-                    console.log("Функция startGame найдена!");
-                }
-            };
-            document.body.appendChild(script);
-        }, 100);
+        
+        // Запуск при загрузке
+        window.addEventListener('load', init);
+        
+        // Глобальная функция
+        window.startGame = startGame;
+        
+        console.log("✅ Игровой скрипт загружен!");
     </script>
 </body>
 </html>
