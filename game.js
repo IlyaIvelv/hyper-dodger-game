@@ -829,24 +829,24 @@ function drawBigRocket(x, y, radius, rotation, enginePower) {
     ctx.restore();
 }
 
-// ===== СОЗДАНИЕ ЧАСТИЦ ОГНЯ ДЛЯ ДВИГАТЕЛЯ (СЗАДИ) =====
+// ===== СОЗДАНИЕ ЧАСТИЦ ОГНЯ ДЛЯ ДВИГАТЕЛЯ (ИСПРАВЛЕННАЯ) =====
 function createEngineFlame() {
     if (player.enginePower > 0.1 && gameRunning && !player.isExploding) {
         // Координаты задней части ракеты
-        const rearX = player.x - Math.cos(player.rotation) * player.radius * 0.9;
-        const rearY = player.y - Math.sin(player.rotation) * player.radius * 0.9;
+        const scaledRadius = player.radius * 0.65;
+        const rearX = player.x + Math.cos(player.rotation) * scaledRadius * 1.0;
+        const rearY = player.y + Math.sin(player.rotation) * scaledRadius * 1.0;
         
         // Создаем частицы огня СЗАДИ ракеты
-        for (let i = 0; i < 2; i++) {
-            const angle = player.rotation - Math.PI; // Направление строго назад
-            const speedVariation = (Math.random() - 0.5) * 0.3;
-            const angleVariation = (Math.random() - 0.5) * 0.2;
+        for (let i = 0; i < 3; i++) {
+            const angle = player.rotation + Math.PI; // Направление строго назад
+            const speedVariation = (Math.random() - 0.5) * 0.5;
             
             player.engineFlame.push({
                 x: rearX,
                 y: rearY,
-                speedX: Math.cos(angle + angleVariation) * (2 + player.enginePower * 1.5 + speedVariation),
-                speedY: Math.sin(angle + angleVariation) * (2 + player.enginePower * 1.5 + speedVariation),
+                speedX: Math.cos(angle) * (2 + player.enginePower * 2 + speedVariation),
+                speedY: Math.sin(angle) * (2 + player.enginePower * 2 + speedVariation),
                 size: Math.random() * 4 + 3,
                 life: 1.0,
                 decay: 0.04 + Math.random() * 0.02,
@@ -966,6 +966,7 @@ if (isMobileDevice()) {
     // Увеличиваем интервал между астероидами на мобильных
     spawnRate = 80; // БОЛЬШЕ ЧИСЛО = РЕЖЕ АСТЕРОИДЫ
 }
+
 
 
 
