@@ -5,6 +5,7 @@
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
+    touch-action: manipulation;
 }
 
 body {
@@ -12,54 +13,54 @@ body {
     color: white;
     font-family: Arial, sans-serif;
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 10px;
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
 }
 
 #scorePanel {
+    position: fixed;
+    top: 10px;
+    left: 0;
+    right: 0;
     display: flex;
     justify-content: space-between;
-    width: 100%;
-    max-width: 800px;
-    padding: 15px;
+    padding: 10px 20px;
     background: rgba(0, 20, 40, 0.8);
-    border-radius: 10px;
-    margin-bottom: 10px;
+    z-index: 100;
 }
 
 #score, #highScore {
-    font-size: 20px;
+    font-size: 22px;
     font-weight: bold;
     color: #00FFFF;
+    text-shadow: 0 0 5px #00FFFF;
 }
 
 #gameCanvas {
-    width: 100%;
-    max-width: 800px;
-    height: 70vh;
-    background: #000;
-    border: 2px solid #4cc9f0;
-    border-radius: 10px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
     display: block;
+    background: #000;
 }
 
 .screen {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
     background: rgba(0, 5, 20, 0.95);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    z-index: 100;
+    z-index: 200;
     padding: 20px;
+    text-align: center;
 }
 
 #startScreen {
@@ -72,37 +73,39 @@ body {
 
 h1 {
     color: #4cc9f0;
+    font-size: 42px;
+    margin-bottom: 30px;
+    text-shadow: 0 0 15px #4cc9f0;
+}
+
+h2 {
+    color: #4cc9f0;
     font-size: 36px;
     margin-bottom: 20px;
     text-shadow: 0 0 10px #4cc9f0;
 }
 
-h2 {
-    color: #4cc9f0;
-    font-size: 32px;
-    margin-bottom: 20px;
-}
-
 p {
     color: #a8dadc;
-    font-size: 18px;
-    margin-bottom: 30px;
-    text-align: center;
-    line-height: 1.5;
+    font-size: 20px;
+    margin-bottom: 40px;
+    line-height: 1.6;
+    max-width: 90%;
 }
 
 button {
     background: linear-gradient(135deg, #4cc9f0, #3a86ff);
     color: white;
     border: none;
-    padding: 15px 30px;
-    font-size: 18px;
+    padding: 20px 50px;
+    font-size: 24px;
     font-weight: bold;
-    border-radius: 25px;
+    border-radius: 30px;
     cursor: pointer;
-    margin: 10px;
-    min-width: 200px;
-    box-shadow: 0 5px 15px rgba(58, 134, 255, 0.4);
+    margin: 15px;
+    min-width: 280px;
+    box-shadow: 0 8px 25px rgba(58, 134, 255, 0.5);
+    transition: transform 0.2s;
 }
 
 button:active {
@@ -111,21 +114,43 @@ button:active {
 
 #finalScore {
     color: #FFD700;
-    font-size: 48px;
+    font-size: 64px;
     font-weight: bold;
-    margin: 20px 0;
+    margin: 30px 0;
+    text-shadow: 0 0 15px #FFD700;
 }
 
 #shieldTimer {
-    position: absolute;
-    top: 80px;
+    position: fixed;
+    top: 70px;
     left: 50%;
     transform: translateX(-50%);
     color: #00FFFF;
-    font-size: 20px;
+    font-size: 24px;
     font-weight: bold;
-    background: rgba(0, 0, 0, 0.5);
-    padding: 5px 15px;
-    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px 20px;
+    border-radius: 15px;
+    border: 2px solid #00FFFF;
     display: none;
+    z-index: 100;
+}
+
+#recordMessage {
+    color: #FFD700;
+    font-size: 24px;
+    margin: 20px;
+    text-shadow: 0 0 10px #FFD700;
+}
+
+/* Для очень маленьких экранов */
+@media (max-height: 600px) {
+    h1 { font-size: 32px; }
+    h2 { font-size: 28px; }
+    button { 
+        padding: 15px 35px; 
+        font-size: 20px; 
+        min-width: 240px;
+    }
+    #score, #highScore { font-size: 18px; }
 }
