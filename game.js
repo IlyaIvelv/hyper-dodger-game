@@ -1041,3 +1041,29 @@ if ('serviceWorker' in navigator) {
             });
     });
 }
+// Инициализация игры
+window.addEventListener('load', function() {
+    console.log("Игра загружена!");
+    
+    // Гарантированно работающие обработчики кнопок
+    document.getElementById('startButton').addEventListener('click', function() {
+        console.log("Старт нажат!");
+        startGame();
+    });
+    
+    document.getElementById('restartButton').addEventListener('click', function() {
+        console.log("Рестарт нажат!");
+        startGame();
+    });
+    
+    // Делаем функцию глобальной
+    window.startGame = startGame;
+    
+    // Инициализация
+    if (typeof initPlayer === 'function') {
+        initPlayer();
+    }
+    if (typeof resizeCanvas === 'function') {
+        resizeCanvas();
+    }
+});
