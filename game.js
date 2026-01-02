@@ -139,6 +139,7 @@ function createShieldBonus() {
 }
 
 // ===== СОЗДАНИЕ АСТЕРОИДА С ВРАЩЕНИЕМ =====
+// ===== СОЗДАНИЕ АСТЕРОИДА С ВРАЩЕНИЕМ (МЕДЛЕННЕЕ) =====
 function createAsteroid() {
     const radius = Math.random() * 25 + 20;
     let x, y;
@@ -156,7 +157,13 @@ function createAsteroid() {
     const dx = targetX - x;
     const dy = targetY - y;
     const distance = Math.sqrt(dx * dx + dy * dy);
-    const speed = Math.random() * 1.5 + 0.8 + score / 2500;
+    
+    // ЗАМЕДЛЕННАЯ СКОРОСТЬ АСТЕРОИДОВ:
+    // Было: Math.random() * 1.5 + 0.8 + score / 2500
+    // Стало: медленнее в начале, медленнее растет со счетом
+    const baseSpeed = Math.random() * 1.0 + 0.5; // Медленнее базовая скорость
+    const scoreBonus = score / 5000; // Медленнее рост со счетом
+    const speed = baseSpeed + scoreBonus;
     
     const rotationSpeed = (Math.random() - 0.5) * 0.04;
     const hue = Math.random() * 30 + 10;
@@ -291,7 +298,7 @@ function update() {
     
     // Создание астероидов
     frames++;
-    const currentSpawnRate = Math.max(25, spawnRate - Math.floor(score / 100));
+    const currentSpawnRate = Math.max(35, spawnRate - Math.floor(score / 150));
     if (frames % currentSpawnRate === 0) {
         createAsteroid();
         
@@ -593,7 +600,7 @@ function draw() {
     }
 }
 
-// ===== ОТРИСОВКА СТАРОГО КОРАБЛЯ (С ОГНЁМ) =====
+// ===== ОТРИСОВКА СТАРОГО КОРАБЛЯ (С МАЛЕНЬКИМ ОГНЬКОМ) =====
 function drawOriginalShip(x, y, radius, rotation, enginePower) {
     ctx.save();
     ctx.translate(x, y);
@@ -678,22 +685,23 @@ function drawOriginalShip(x, y, radius, rotation, enginePower) {
     ctx.closePath();
     ctx.fill();
     
-    // ДВИГАТЕЛЬ С ОГНЁМ (исправлено!)
+    // МАЛЕНЬКИЙ ОГОНЁК ДВИГАТЕЛЯ (как раньше)
     if (enginePower > 0.1) {
-        const engineLength = scaledRadius * 1.5 * enginePower;
-        const engineWidth = scaledRadius * 0.8;
+        // Маленький размер огонька
+        const engineLength = scaledRadius * 0.8 * enginePower; // Уменьшили в 2 раза
+        const engineWidth = scaledRadius * 0.4; // Уменьшили ширину
         
-        // Градиент огня
+        // Градиент огня (менее яркий)
         const engineGradient = ctx.createLinearGradient(
             0, -engineWidth/2,
             0, engineWidth/2
         );
-        engineGradient.addColorStop(0, '#ff5500');
-        engineGradient.addColorStop(0.5, '#ffff00');
-        engineGradient.addColorStop(1, '#ff5500');
+        engineGradient.addColorStop(0, 'rgba(255, 100, 0, 0.8)'); // Более прозрачный
+        engineGradient.addColorStop(0.5, 'rgba(255, 200, 0, 0.6)'); // Желтый вместо ярко-желтого
+        engineGradient.addColorStop(1, 'rgba(255, 100, 0, 0.8)');
         
         ctx.fillStyle = engineGradient;
-        ctx.globalAlpha = 0.7;
+        ctx.globalAlpha = 0.6 * enginePower; // Меньшая прозрачность
         ctx.beginPath();
         ctx.moveTo(0, -engineWidth/2);
         ctx.lineTo(-engineLength, 0);
@@ -702,10 +710,24 @@ function drawOriginalShip(x, y, radius, rotation, enginePower) {
         ctx.fill();
         
         ctx.globalAlpha = 1;
+        
+        // Добавляем маленькие искры
+        if (Math.random() < 0.3) {
+            ctx.fillStyle = '#ffff00';
+            ctx.globalAlpha = 0.5;
+            ctx.beginPath();
+            const sparkX = -engineLength * 0.8;
+            const sparkY = (Math.random() - 0.5) * engineWidth * 0.5;
+            const sparkSize = Math.random() * 2 + 1;
+            ctx.arc(sparkX, sparkY, sparkSize, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        }
     }
     
     ctx.restore();
 }
+
 
 // ===== ИГРОВОЙ ЦИКЛ =====
 function gameLoop() {
@@ -789,3 +811,4 @@ window.addEventListener('load', function() {
     
     console.log("🚀 Игра 'Гипер-уворачиватель' готова к запуску!");
 });
+
