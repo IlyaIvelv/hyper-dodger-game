@@ -298,7 +298,7 @@ function update() {
     
     // Создание астероидов
     frames++;
-    const currentSpawnRate = Math.max(35, spawnRate - Math.floor(score / 150));
+    const currentSpawnRate = Math.max(45, spawnRate - Math.floor(score / 180));
     if (frames % currentSpawnRate === 0) {
         createAsteroid();
         
@@ -835,5 +835,6 @@ window.addEventListener('load', function() {
     
     console.log("🚀 Игра 'Гипер-уворачиватель' готова к запуску!");
 });
+
 
 
