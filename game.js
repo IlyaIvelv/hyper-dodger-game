@@ -346,7 +346,7 @@ function update() {
     
     // Создание астероидов (реже)
     frames++;
-    const currentSpawnRate = Math.max(35, spawnRate - Math.floor(score / 150));
+    const currentSpawnRate = Math.max(50, spawnRate - Math.floor(score / 200));
     if (frames % currentSpawnRate === 0) {
         createAsteroid();
         
@@ -794,56 +794,65 @@ function drawBigRocket(x, y, radius, rotation, enginePower) {
     ctx.ellipse(0, scaledRadius * 1.0, scaledRadius * 0.3, scaledRadius * 0.15, 0, 0, Math.PI * 2);
     ctx.fill();
     
-    // ОГОНЬ ИЗ ДВИГАТЕЛЯ - СЗАДИ РАКЕТЫ
+     // ОГОНЬ ИЗ ДВИГАТЕЛЯ - СТРОГО СЗАДИ РАКЕТЫ
     if (enginePower > 0.1) {
-        // Координаты для огня (сзади ракеты)
+        // Координаты СТРОГО СЗАДИ ракеты (в самом конце)
         const flameX = 0;
-        const flameY = scaledRadius * 1.0; // Позади ракеты
+        const flameY = scaledRadius * 1.1; // Еще дальше сзади
         
-        const flameLength = scaledRadius * 2.0 * enginePower;
-        const flameWidth = scaledRadius * 0.7;
+        const flameLength = scaledRadius * 2.2 * enginePower;
+        const flameWidth = scaledRadius * 0.75;
         
-        // Основное пламя (направлено назад)
+        // Сохраняем текущую трансформацию для огня
+        ctx.save();
+        
+        // Огонь должен быть направлен СТРОГО НАЗАД (по оси вращения)
+        ctx.rotate(Math.PI); // Разворачиваем на 180 градусов
+        
+        // Основное пламя
         const flameGradient = ctx.createLinearGradient(
-            flameX, flameY - flameWidth/2,
-            flameX, flameY + flameWidth/2
+            0, -flameWidth/2,
+            0, flameWidth/2
         );
         flameGradient.addColorStop(0, '#FFFF00');
-        flameGradient.addColorStop(0.3, '#FFAA00');
-        flameGradient.addColorStop(0.7, '#FF5500');
+        flameGradient.addColorStop(0.2, '#FFAA00');
+        flameGradient.addColorStop(0.5, '#FF5500');
         flameGradient.addColorStop(1, '#FF0000');
         
         ctx.fillStyle = flameGradient;
         ctx.globalAlpha = 0.9;
         ctx.beginPath();
-        ctx.moveTo(flameX, flameY - flameWidth/2);
-        ctx.lineTo(flameX - flameLength, flameY);
-        ctx.lineTo(flameX, flameY + flameWidth/2);
+        ctx.moveTo(0, -flameWidth/2);
+        ctx.lineTo(-flameLength, 0);
+        ctx.lineTo(0, flameWidth/2);
         ctx.closePath();
         ctx.fill();
         
-        // Внешнее свечение пламени
-        ctx.fillStyle = 'rgba(255, 100, 0, 0.4)';
+        // Внешнее свечение
+        ctx.fillStyle = 'rgba(255, 150, 0, 0.5)';
         ctx.beginPath();
-        ctx.moveTo(flameX, flameY - flameWidth/1.5);
-        ctx.lineTo(flameX - flameLength * 1.2, flameY);
-        ctx.lineTo(flameX, flameY + flameWidth/1.5);
+        ctx.moveTo(0, -flameWidth/1.3);
+        ctx.lineTo(-flameLength * 1.3, 0);
+        ctx.lineTo(0, flameWidth/1.3);
         ctx.closePath();
         ctx.fill();
+        
+        ctx.restore();
         
         // Искры
         ctx.fillStyle = '#FFFF00';
-        ctx.globalAlpha = 0.7;
-        for (let i = 0; i < 3; i++) {
-            const sparkX = flameX - flameLength * (0.3 + Math.random() * 0.7);
-            const sparkY = flameY + (Math.random() - 0.5) * flameWidth * 0.6;
+        ctx.globalAlpha = 0.8;
+        for (let i = 0; i < 4; i++) {
+            const sparkAngle = Math.PI + (Math.random() - 0.5) * 0.3;
+            const sparkDistance = flameLength * (0.2 + Math.random() * 0.8);
+            const sparkX = Math.cos(sparkAngle) * sparkDistance;
+            const sparkY = Math.sin(sparkAngle) * sparkDistance;
             const sparkSize = Math.random() * 2 + 1;
             
             ctx.beginPath();
             ctx.arc(sparkX, sparkY, sparkSize, 0, Math.PI * 2);
             ctx.fill();
         }
-        
         ctx.globalAlpha = 1;
     }
     
@@ -983,9 +992,9 @@ function isMobileDevice() {
 
 // Дополнительное замедление для мобильных
 if (isMobileDevice()) {
-    console.log("Мобильное устройство - дополнительное замедление астероидов");
+    console.log("Мобильное устройство - замедление астероидов и уменьшение частоты");
     
-    // Переопределяем скорость для мобильных
+    // Замедляем скорость астероидов
     const originalCreateAsteroid = createAsteroid;
     createAsteroid = function() {
         const asteroid = originalCreateAsteroid();
@@ -993,11 +1002,15 @@ if (isMobileDevice()) {
         
         if (lastIndex >= 0) {
             // Дополнительно замедляем астероиды на мобильных
-            asteroids[lastIndex].speedX *= 0.7;
-            asteroids[lastIndex].speedY *= 0.7;
+            asteroids[lastIndex].speedX *= 0.6; // БЫЛО 0.7
+            asteroids[lastIndex].speedY *= 0.6; // БЫЛО 0.7
         }
         
         return asteroid;
     };
+    
+    // Увеличиваем интервал между астероидами на мобильных
+    spawnRate = 80; // БОЛЬШЕ ЧИСЛО = РЕЖЕ АСТЕРОИДЫ
 }
+
 
