@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Гипер-уворачиватель</title>
-    <link rel="stylesheet" href="style.css">
     <style>
         * {
             margin: 0;
@@ -13,6 +12,7 @@
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             user-select: none;
+            touch-action: manipulation;
         }
         
         body {
@@ -20,12 +20,19 @@
             color: white;
             font-family: Arial, sans-serif;
             overflow: hidden;
+            width: 100vw;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            padding: 10px;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 80vh;
         }
         
         #scorePanel {
@@ -33,7 +40,7 @@
             justify-content: space-between;
             width: 100%;
             max-width: 800px;
-            padding: 15px;
+            padding: 10px;
             background: rgba(0, 20, 40, 0.8);
             border-radius: 10px;
             margin-bottom: 10px;
@@ -47,8 +54,7 @@
         
         #gameCanvas {
             width: 100%;
-            max-width: 800px;
-            height: 70vh;
+            height: 100%;
             background: #000;
             border: 2px solid #4cc9f0;
             border-radius: 10px;
@@ -56,7 +62,7 @@
         }
         
         .screen {
-            position: fixed;
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
@@ -80,37 +86,41 @@
         
         h1 {
             color: #4cc9f0;
-            font-size: 36px;
+            font-size: 32px;
             margin-bottom: 20px;
+            text-align: center;
             text-shadow: 0 0 10px #4cc9f0;
         }
         
         h2 {
             color: #4cc9f0;
-            font-size: 32px;
+            font-size: 28px;
             margin-bottom: 20px;
+            text-align: center;
         }
         
         p {
             color: #a8dadc;
-            font-size: 18px;
+            font-size: 16px;
             margin-bottom: 30px;
             text-align: center;
             line-height: 1.5;
+            max-width: 80%;
         }
         
         button {
             background: linear-gradient(135deg, #4cc9f0, #3a86ff);
             color: white;
             border: none;
-            padding: 20px 40px;
-            font-size: 20px;
+            padding: 15px 30px;
+            font-size: 18px;
             font-weight: bold;
             border-radius: 25px;
             cursor: pointer;
             margin: 10px;
-            min-width: 250px;
+            min-width: 200px;
             box-shadow: 0 5px 15px rgba(58, 134, 255, 0.4);
+            transition: transform 0.1s;
         }
         
         button:active {
@@ -122,6 +132,26 @@
             font-size: 48px;
             font-weight: bold;
             margin: 20px 0;
+            text-shadow: 0 0 10px #FFD700;
+        }
+        
+        .controls-info {
+            color: #888;
+            font-size: 14px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 24px; }
+            h2 { font-size: 22px; }
+            button { 
+                padding: 12px 24px; 
+                font-size: 16px; 
+                min-width: 180px;
+            }
+            #score, #highScore { font-size: 16px; }
+            #gameContainer { height: 70vh; }
         }
     </style>
 </head>
@@ -131,21 +161,56 @@
         <div id="highScore">Рекорд: 0</div>
     </div>
     
-    <canvas id="gameCanvas"></canvas>
-    
-    <div id="startScreen" class="screen">
-        <h1>🚀 ГИПЕР-УВОРАЧИВАТЕЛЬ</h1>
-        <p>Уворачивайтесь от астероидов!<br>Собирайте щиты для защиты.</p>
-        <button id="startButton">СТАРТ ИГРЫ</button>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="startScreen" class="screen">
+            <h1>🚀 ГИПЕР-УВОРАЧИВАТЕЛЬ</h1>
+            <p>Уворачивайтесь от астероидов!<br>
+            Собирайте щиты для защиты.<br>
+            Щит разрушает астероиды на осколки!</p>
+            <button id="startButton">СТАРТ ИГРЫ</button>
+        </div>
+        
+        <div id="gameOverScreen" class="screen">
+            <h2>ИГРА ОКОНЧЕНА</h2>
+            <p>Ваш результат:</p>
+            <div id="finalScore">0</div>
+            <button id="restartButton">ИГРАТЬ СНОВА</button>
+        </div>
     </div>
     
-    <div id="gameOverScreen" class="screen">
-        <h2>ИГРА ОКОНЧЕНА</h2>
-        <p>Ваш результат:</p>
-        <div id="finalScore">0</div>
-        <button id="restartButton">ИГРАТЬ СНОВА</button>
+    <div class="controls-info">
+        Управление: касанием/мышью • Щиты появляются каждые 20 секунд
     </div>
 
     <script src="game.js"></script>
+    
+    <!-- Простой скрипт для проверки -->
+    <script>
+        console.log("HTML загружен!");
+        
+        // Проверяем, что элементы существуют
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM готов!");
+            
+            const elements = ['gameCanvas', 'startButton', 'restartButton', 'score', 'highScore', 'startScreen', 'gameOverScreen', 'finalScore'];
+            
+            elements.forEach(id => {
+                const el = document.getElementById(id);
+                console.log(id + ":", el ? "Найден" : "НЕ НАЙДЕН!");
+            });
+            
+            // Принудительно запускаем игру через 2 секунды для теста
+            setTimeout(function() {
+                console.log("Проверка: если есть window.startGame, запустим её...");
+                if (typeof window.startGame === 'function') {
+                    console.log("Функция startGame найдена!");
+                } else {
+                    console.error("Функция startGame НЕ найдена!");
+                }
+            }, 2000);
+        });
+    </script>
 </body>
 </html>
