@@ -765,6 +765,30 @@ function gameOver() {
     gameOverScreen.style.display = 'flex';
 }
 
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+// Дополнительное замедление для мобильных
+if (isMobileDevice()) {
+    console.log("Мобильное устройство - дополнительное замедление астероидов");
+    
+    // Переопределяем скорость для мобильных
+    const originalCreateAsteroid = createAsteroid;
+    createAsteroid = function() {
+        const asteroid = originalCreateAsteroid();
+        const lastIndex = asteroids.length - 1;
+        
+        if (lastIndex >= 0) {
+            // Дополнительно замедляем астероиды на мобильных
+            asteroids[lastIndex].speedX *= 0.8;
+            asteroids[lastIndex].speedY *= 0.8;
+        }
+        
+        return asteroid;
+    };
+}
+
 // ===== НАЧАЛО ИГРЫ =====
 function startGame() {
     initPlayer();
@@ -811,4 +835,5 @@ window.addEventListener('load', function() {
     
     console.log("🚀 Игра 'Гипер-уворачиватель' готова к запуску!");
 });
+
 
