@@ -1,3 +1,39 @@
+// ПРОСТОЙ ТЕСТ - УБЕДИМСЯ ЧТО КОД ВЫПОЛНЯЕТСЯ
+console.log("=== GAME.JS ЗАГРУЖЕН ===");
+
+// Ждем полной загрузки DOM
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM полностью загружен!");
+    
+    // Проверяем элементы
+    const canvas = document.getElementById('gameCanvas');
+    const startButton = document.getElementById('startButton');
+    const restartButton = document.getElementById('restartButton');
+    
+    console.log("Canvas:", canvas ? "Найден" : "Не найден");
+    console.log("Start button:", startButton ? "Найден" : "Не найден");
+    console.log("Restart button:", restartButton ? "Найден" : "Не найден");
+    
+    // Если canvas не найден, создаем его
+    if (!canvas) {
+        console.error("Canvas не найден! Создаем...");
+        const newCanvas = document.createElement('canvas');
+        newCanvas.id = 'gameCanvas';
+        newCanvas.width = 800;
+        newCanvas.height = 600;
+        newCanvas.style.border = '2px solid red';
+        document.body.appendChild(newCanvas);
+    }
+    
+    // Принудительно показываем, что скрипт работает
+    setTimeout(() => {
+        if (startButton) {
+            startButton.style.backgroundColor = '#4CAF50';
+            startButton.textContent = "✅ ГОТОВО! НАЖМИ МЕНЯ";
+        }
+    }, 1000);
+});
+
 // game.js - ПОЛНЫЙ КОД ИГРЫ
 // Инициализация элементов
 const canvas = document.getElementById('gameCanvas');
@@ -586,3 +622,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Глобальная функция для кнопок
 window.startGame = startGame;
+
